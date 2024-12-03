@@ -13,6 +13,8 @@ An early prototype of a web-based application that transcribes medical consultat
 - 🔍 Mock patient database integration
 - ⚡ Real-time patient information lookup
 
+![Medical Transcription Assistant Screenshot](screenshots/app_screenshot.png)
+
 ## Technology Stack
 
 - **Backend:** Python, Flask
