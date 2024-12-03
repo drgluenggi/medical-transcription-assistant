@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body {
+    margin: 0;
+    padding: 16px;
+    background: #f5f5f5;
+    font-family: sans-serif;
+  }
+
+  #app-container {
+    max-width: 400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+  }
+
+  .logo-container {
+    padding: 16px;
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .logo-container img {
+    width: 88px;
+    height: 88px;
+  }
+
+  .patient-info {
+    padding: 16px;
+  }
+
+  .patient-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .patient-info-field {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+  }
+
+  .container {
+    padding: 16px;
+  }
+
+  .transcription-section {
+    margin-bottom: 24px;
+  }
+
+	.controls {
+		margin: 20px 0;
+		text-align: center;
+	}
+	button {
+		padding: 10px 20px;
+		margin: 0 10px;
+		font-size: 16px;
+		cursor: pointer;
+	}
+	#recordButton {
+		background-color: #ff4444;
+		color: white;
+		border: none;
+		border-radius: 5px;
+	}
+	#recordButton.recording {
+		background-color: #666;
+	}
+	#recordButton:disabled {
+		background-color: #cccccc;
+		cursor: not-allowed;
+	}
+	#result {
+		margin-top: 20px;
+		padding: 15px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+		min-height: 100px;
+		white-space: pre-wrap;
+	}
+	.status {
+		margin-top: 10px;
+		font-style: italic;
+		color: #666;
+	}
+	.error {
+		color: #ff4444;
+	}
+
+  .prescription-section {
+    margin-top: 24px;
+  }
+
+  #prescriptionContainer {
+    min-height: 100px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    color: #333;
+  }
+
+  /* Hide all patient info fields except Name and Medical Record Number */
+  .patient-info-field:not(:nth-child(1)):not(:nth-child(3)) {
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div id="app-container">
+  <div class="logo-container">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Medical App Logo">
+  </div>
+  
+  <div class="patient-info">
+    <div class="patient-info-grid">
+            <div class="patient-info-field">
+                <label for="patientName">Patient Name</label>
+                <input type="text" id="patientName" disabled>
+            </div>
+      <div class="patient-info-field">Medical Record Number</div>
+    </div>
+  </div>
+
+  <div class="container">
+        <div class="transcription-section">
+            <h2>Transcription</h2>
+            <div class="controls">
+                <button id="recordButton">Start Recording</button>
+            </div>
+            <div class="status" id="status"></div>
+            <div id="result"></div>
+        </div>
+
+    <div class="prescription-section">
+      <h2>Prescriptions</h2>
+      <div id="prescriptionContainer"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        const recordButton = document.getElementById('recordButton');
+        const status = document.getElementById('status');
+        const result = document.getElementById('result');
+        const prescriptionContainer = document.getElementById('prescriptionContainer');
+
+        recordButton.addEventListener('click', toggleRecording);
+
+        function updatePatientInfo(data) {
+            // Clear existing patient info if no patient was found
+            if (!data.patient_found) {
+                document.getElementById('patientName').value = '';
+                document.getElementById('patientDOB').value = '';
+                document.getElementById('patientMRN').value = '';
+                document.getElementById('patientPhone').value = '';
+                document.getElementById('patientAddress').value = '';
+                document.getElementById('patientInsurance').value = '';
+                document.getElementById('patientAllergies').value = '';
+                document.getElementById('patientMedications').value = '';
+                return;
+            }
+
+            // Extract patient info from the transcription text
+            const patientMatch = data.transcription.match(/Patient: (.*?) \(MRN: (.*?)\)/);
+            if (patientMatch) {
+                const patientName = patientMatch[1];
+                const mrn = patientMatch[2];
+                
+                // Find the patient in our local copy of the database
+                const lastNameMatch = patientName.split(' ')[1];
+                fetch('/get_patient_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ last_name: lastNameMatch })
+                })
+                .then(response => response.json())
+                .then(patient => {
+                    if (patient) {
+                        document.getElementById('patientName').value = `${patient.first_name} ${patient.last_name}`;
+                        document.getElementById('patientDOB').value = new Date(patient.dob).toLocaleDateString();
+                        document.getElementById('patientMRN').value = patient.mrn;
+                        document.getElementById('patientPhone').value = patient.phone;
+                        document.getElementById('patientAddress').value = patient.address;
+                        document.getElementById('patientInsurance').value = `${patient.insurance.provider} - ${patient.insurance.policy_number}`;
+                        document.getElementById('patientAllergies').value = patient.allergies.join(', ') || 'None';
+                        document.getElementById('patientMedications').value = patient.current_medications.join(', ') || 'None';
+                    }
+                });
+            }
+        }
+
+        function displayPrescriptions(prescriptions) {
+            prescriptionContainer.innerHTML = '';
+            
+            prescriptions.forEach((prescription, index) => {
+                const prescriptionDiv = document.createElement('div');
+                prescriptionDiv.className = 'prescription-preview';
+                
+                const iframe = document.createElement('iframe');
+                iframe.className = 'prescription-iframe';
+                iframe.srcdoc = prescription.html;
+                
+                const printButton = document.createElement('button');
+                printButton.className = 'print-button';
+                printButton.textContent = `Print Prescription for ${prescription.medication}`;
+                printButton.onclick = () => printPrescription(prescription.html);
+                
+                prescriptionDiv.appendChild(iframe);
+                prescriptionDiv.appendChild(printButton);
+                prescriptionContainer.appendChild(prescriptionDiv);
+            });
+        }
+
+        function printPrescription(html) {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        async function toggleRecording() {
+            if (!isRecording) {
+                try {
+                    recordButton.disabled = true;
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    startRecording(stream);
+                } catch (err) {
+                    console.error('Error accessing microphone:', err);
+                    status.textContent = 'Error accessing microphone. Please ensure you have granted permission.';
+                    status.classList.add('error');
+                } finally {
+                    recordButton.disabled = false;
+                }
+            } else {
+                stopRecording();
+            }
+        }
+
+        function startRecording(stream) {
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.addEventListener('dataavailable', event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener('stop', () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                sendAudioToServer(audioBlob);
+            });
+
+            mediaRecorder.start();
+            isRecording = true;
+            recordButton.textContent = 'Stop Recording';
+            recordButton.classList.add('recording');
+            status.textContent = 'Recording...';
+            status.classList.remove('error');
+        }
+
+        function stopRecording() {
+            try {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                recordButton.textContent = 'Start Recording';
+                recordButton.classList.remove('recording');
+                status.textContent = 'Processing audio...';
+                status.classList.remove('error');
+            } catch (err) {
+                console.error('Error stopping recording:', err);
+                status.textContent = 'Error stopping recording. Please refresh the page and try again.';
+                status.classList.add('error');
+            }
+        }
+
+        async function sendAudioToServer(audioBlob) {
+            recordButton.disabled = true;
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+
+                result.textContent = data.transcription;
+                updatePatientInfo(data);
+                
+                if (data.prescriptions && data.prescriptions.length > 0) {
+                    displayPrescriptions(data.prescriptions);
+                }
+                
+                status.textContent = 'Transcription complete!';
+                status.classList.remove('error');
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = 'Error processing audio. Please try again.';
+                status.classList.add('error');
+                result.textContent = '';
+            } finally {
+                recordButton.disabled = false;
+            }
+        }
+    </script>
+
+</body>
+</html>

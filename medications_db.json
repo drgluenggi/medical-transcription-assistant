@@ -1,0 +1,101 @@
+{
+    "medications": {
+        "ibuprofen": {
+            "brand_names": ["Advil", "Motrin"],
+            "typical_dosages": ["400mg", "600mg", "800mg"],
+            "frequency": "Every 6-8 hours",
+            "max_daily_dose": "3200mg",
+            "timing_recommendations": {
+                "meal_relation": "Take with food or milk to reduce stomach upset",
+                "time_of_day": "Can be taken any time of day",
+                "foods_to_avoid": "Limit alcohol consumption. Avoid high-sodium foods if taking regularly."
+            },
+            "warnings": [
+                "May increase risk of heart attack or stroke",
+                "Do not take with other NSAIDs",
+                "Consult doctor if pregnant"
+            ]
+        },
+        "naproxen": {
+            "brand_names": ["Aleve", "Naprosyn"],
+            "typical_dosages": ["250mg", "375mg", "500mg"],
+            "frequency": "Every 12 hours",
+            "max_daily_dose": "1500mg",
+            "timing_recommendations": {
+                "meal_relation": "Take with food. For best absorption, avoid taking within 2 hours of antacids",
+                "time_of_day": "Morning and evening doses recommended",
+                "foods_to_avoid": "Limit alcohol consumption. Avoid grapefruit juice."
+            },
+            "warnings": [
+                "May increase risk of heart attack or stroke",
+                "Not recommended for long-term use without medical supervision",
+                "Avoid if history of kidney disease"
+            ]
+        },
+        "acetaminophen": {
+            "brand_names": ["Tylenol"],
+            "typical_dosages": ["325mg", "500mg", "650mg"],
+            "frequency": "Every 4-6 hours",
+            "max_daily_dose": "4000mg",
+            "timing_recommendations": {
+                "meal_relation": "Can be taken with or without food",
+                "time_of_day": "Can be taken any time of day",
+                "foods_to_avoid": "Limit alcohol consumption to avoid liver damage"
+            },
+            "warnings": [
+                "Do not exceed recommended dose",
+                "Avoid with liver disease",
+                "Check other medications for acetaminophen content"
+            ]
+        },
+        "tramadol": {
+            "brand_names": ["Ultram"],
+            "typical_dosages": ["50mg", "100mg"],
+            "frequency": "Every 4-6 hours",
+            "max_daily_dose": "400mg",
+            "timing_recommendations": {
+                "meal_relation": "Can be taken with or without food. If nauseous, take with food",
+                "time_of_day": "Space doses evenly throughout day",
+                "foods_to_avoid": "Avoid alcohol. Avoid grapefruit juice."
+            },
+            "warnings": [
+                "May cause drowsiness",
+                "Do not drive until you know how it affects you",
+                "Controlled substance - take exactly as prescribed"
+            ]
+        },
+        "celecoxib": {
+            "brand_names": ["Celebrex"],
+            "typical_dosages": ["100mg", "200mg"],
+            "frequency": "Once or twice daily",
+            "max_daily_dose": "400mg",
+            "timing_recommendations": {
+                "meal_relation": "Can be taken with or without food",
+                "time_of_day": "If twice daily, space 12 hours apart",
+                "foods_to_avoid": "No specific food restrictions, but limit alcohol"
+            },
+            "warnings": [
+                "May increase risk of heart attack or stroke",
+                "Not recommended for long-term use without supervision",
+                "Tell doctor if you have heart disease or high blood pressure"
+            ]
+        },
+        "cyclobenzaprine": {
+            "brand_names": ["Flexeril"],
+            "typical_dosages": ["5mg", "10mg"],
+            "frequency": "Three times daily (TID)",
+            "max_daily_dose": "30mg",
+            "timing_recommendations": {
+                "meal_relation": "Can be taken with or without food",
+                "time_of_day": "Space doses evenly throughout day",
+                "foods_to_avoid": "Avoid alcohol while taking this medication"
+            },
+            "warnings": [
+                "May cause drowsiness",
+                "Do not drive until you know how medication affects you",
+                "Not recommended for long-term use",
+                "Avoid use with MAO inhibitors"
+            ]
+        }
+    }
+}
